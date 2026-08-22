@@ -1,10 +1,11 @@
 const express = require("express");
 const upload = require("../config/upload");
 const { fileUpload, getFiles, getFile, deleteFile } = require("../controllers/file.controller");
+const uploadSingleFile = require("../middleware/upload.middleware");
 
 const router = express.Router();
 
-router.post("/upload", upload.single("file"), fileUpload);
+router.post("/upload", uploadSingleFile, fileUpload);
 
 router.get("/", getFiles);
 

@@ -4,6 +4,13 @@ const path = require("path");
 const fs = require("fs/promises");
 
 const fileUpload =  async (req, res) => {
+
+    if (!req.file) {
+        return res.status(400).json({
+            message: "No file uploaded"
+        });
+    }
+
     const { originalname, filename, mimetype, size, path } = req.file;
 
     try {
@@ -77,9 +84,20 @@ const getFile = async (req, res) => {
     
         const file = result.rows[0];
     
-        const filePath = path.join("uploads", file.stored_name);
+        const filePath = path.resolve(
+            path.join("uploads", file.stored_name)
+        );
+
+        try {
+            await fs.access(filePath);
+        } catch (error) {
+            return res.status(404).json({
+                message: "File is missing from storage"
+            });
+        }
     
-        res.sendFile(path.resolve(filePath));
+        res.sendFile(filePath);
+
     } catch (error) {
         console.error("Failed to retrieve file:", error.message);
 
@@ -111,9 +129,17 @@ const deleteFile = async (req, res) => {
         }
     
         const storedName = result.rows[0].stored_name;
-        const filePath = path.join("uploads", storedName);
-    
-        await fs.unlink(filePath);
+        const filePath = path.resolve(
+            path.join("uploads", storedName)
+        );
+
+        try {
+            await fs.unlink(filePath);
+        } catch (error) {
+            if (error.code !== "ENOENT") {
+                throw error;
+            }
+        }
     
         await pool.query(
             `DELETE FROM files
