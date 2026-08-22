@@ -12,12 +12,13 @@ const fileUpload =  async (req, res) => {
     }
 
     const { originalname, filename, mimetype, size, path } = req.file;
+    const userId = req.user.userId;
 
     try {
         const result = await pool.query(
-            `INSERT INTO files (original_name, stored_name, mime_type, size)
-            VALUES ($1, $2, $3, $4)
-            RETURNING *`, [originalname, filename, mimetype, size]
+            `INSERT INTO files (user_id, original_name, stored_name, mime_type, size)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *`, [userId, originalname, filename, mimetype, size]
         );
         res.status(201).json({
             message: "File uploaded successfully",
@@ -45,9 +46,10 @@ const getFiles = async (req, res) => {
 
     try {
         const result = await pool.query(
-            `SELECT *
+            `SELECT id, original_name, stored_name, mime_type, size, created_at
             FROM files
-            ORDER BY created_at DESC`    
+            WHERE user_id = $1
+            ORDER BY created_at DESC` , [req.user.userId]   
         );
     
         res.json({
@@ -73,7 +75,9 @@ const getFile = async (req, res) => {
         const result = await pool.query(
             `SELECT *
             FROM files
-            WHERE id = $1`, [id]
+            WHERE id = $1
+            AND user_id = $2`,
+            [id, req.user.userId]
         );
     
         if (result.rows.length === 0) {
@@ -143,7 +147,9 @@ const deleteFile = async (req, res) => {
     
         await pool.query(
             `DELETE FROM files
-            WHERE id = $1`, [id]
+            WHERE id = $1
+            AND user_id = $2`,
+            [id, req.user.userId]
         );
     
         res.json({
