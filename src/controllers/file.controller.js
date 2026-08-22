@@ -1,0 +1,136 @@
+const pool = require("../config/db");
+const path = require("path");
+
+const fs = require("fs/promises");
+
+const fileUpload =  async (req, res) => {
+    const { originalname, filename, mimetype, size, path } = req.file;
+
+    try {
+        const result = await pool.query(
+            `INSERT INTO files (original_name, stored_name, mime_type, size)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *`, [originalname, filename, mimetype, size]
+        );
+        res.status(201).json({
+            message: "File uploaded successfully",
+            file: result.rows[0]
+        });
+
+    } catch (error) {
+
+        try {
+            await fs.unlink(path);
+        } catch (deleteError) {
+            console.error("Failed to delete orphaned file:", deleteError.message);
+        }
+
+        console.error("Failed to save file metadata:", error.message);
+
+        res.status(500).json({
+            message: "File uploaded failed"
+        });
+    }
+};
+
+
+const getFiles = async (req, res) => {
+
+    try {
+        const result = await pool.query(
+            `SELECT *
+            FROM files
+            ORDER BY created_at DESC`    
+        );
+    
+        res.json({
+            files: result.rows
+        });
+
+    } catch (error) {
+        console.error("Failed to fetch files:", error.message);
+
+        res.status(500).json({
+            message: "Failed to fetch files"
+        });
+    }
+
+};
+
+
+const getFile = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        
+        const result = await pool.query(
+            `SELECT *
+            FROM files
+            WHERE id = $1`, [id]
+        );
+    
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "File not found"
+            });
+        }
+    
+        const file = result.rows[0];
+    
+        const filePath = path.join("uploads", file.stored_name);
+    
+        res.sendFile(path.resolve(filePath));
+    } catch (error) {
+        console.error("Failed to retrieve file:", error.message);
+
+        res.status(500).json({
+            message: "Failed to retrive file"
+        });
+    }
+
+
+};
+
+
+const deleteFile = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        
+        const result = await pool.query(`
+            SELECT stored_name
+            FROM files
+            WHERE id = $1
+            `, [id]
+        );
+    
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "File not found"
+            });
+        }
+    
+        const storedName = result.rows[0].stored_name;
+        const filePath = path.join("uploads", storedName);
+    
+        await fs.unlink(filePath);
+    
+        await pool.query(
+            `DELETE FROM files
+            WHERE id = $1`, [id]
+        );
+    
+        res.json({
+            message: "File deleted successfully"
+        });
+    } catch (error) {
+        console.error("Failed to delete file:", error.message);
+
+        res.status(500).json({
+            message: "Failed to delete file"
+        });
+    }
+
+};
+
+module.exports = { fileUpload, getFiles, getFile, deleteFile };
