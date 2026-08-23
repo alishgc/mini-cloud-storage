@@ -100,7 +100,15 @@ const getFile = async (req, res) => {
             });
         }
     
-        res.sendFile(filePath);
+        res.json({
+            file: {
+                id: file.id,
+                original_name: file.original_name,
+                mime_type: file.mime_type,
+                size: file.size,
+                created_at: file.created_at
+            }
+        });
 
     } catch (error) {
         console.error("Failed to retrieve file:", error.message);
@@ -165,4 +173,93 @@ const deleteFile = async (req, res) => {
 
 };
 
-module.exports = { fileUpload, getFiles, getFile, deleteFile };
+const downloadFile = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await pool.query(
+            `SELECT original_name, stored_name
+             FROM files
+             WHERE id = $1
+             AND user_id = $2`,
+            [id, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "File not found"
+            });
+        }
+
+        const file = result.rows[0];
+
+        const filePath = path.resolve(
+            path.join("uploads", file.stored_name)
+        );
+
+        try {
+            await fs.access(filePath);
+        } catch (error) {
+            return res.status(404).json({
+                message: "File is missing from storage"
+            });
+        }
+
+        res.download(filePath, file.original_name);
+    } catch (error) {
+        console.error("Failed to download file:", error.message);
+
+        res.status(500).json({
+            message: "Failed to download file"
+        });
+    }
+};
+
+const renameFile = async (req, res) => {
+    const { id } = req.params;
+    const { original_name } = req.body;
+
+    if (!original_name || !original_name.trim()) {
+        return res.status(400).json({
+            message: "File name is required"
+        });
+    }
+
+    const newName = original_name.trim();
+
+    if (newName.length > 255) {
+        return res.status(400).json({
+            message: "File name must be 255 characters or less"
+        });
+    }
+
+    try {
+        const result = await pool.query(
+            `UPDATE files
+             SET original_name = $1
+             WHERE id = $2
+             AND user_id = $3
+             RETURNING id, original_name, mime_type, size, created_at`,
+            [newName, id, req.user.userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "File not found"
+            });
+        }
+
+        res.json({
+            message: "File renamed successfully",
+            file: result.rows[0]
+        });
+    } catch (error) {
+        console.error("Failed to rename file:", error.message);
+
+        res.status(500).json({
+            message: "Failed to rename file"
+        });
+    }
+};
+
+module.exports = { fileUpload, getFiles, getFile, deleteFile, downloadFile, renameFile };
