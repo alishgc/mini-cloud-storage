@@ -125,20 +125,12 @@ JWT_SECRET=your_jwt_secret
 
 Replace `your_password` and `your_jwt_secret` with your own values.
 
-**Do not commit your `.env` file.**
 
 ### 5. Start the server
 
-For development:
-
 ```bash
+# Development (with nodemon)
 npm run dev
-```
-
-Or for production:
-
-```bash
-npm start
 ```
 
 The API will run at:
@@ -406,13 +398,3 @@ The complete database schema is available in [`schema.sql`](schema.sql).
 * Uploaded files are not committed to the repository.
 * `.env` is excluded from Git.
 * Uploaded files are removed if their database metadata cannot be saved.
-
-## Development Notes
-
-This project is a learning-focused backend implementation. It uses local filesystem storage rather than cloud object storage such as Amazon S3.
-
-The project focuses on understanding the fundamentals of authentication, authorization, file handling, database integration, and REST API design.
-
-## License
-
-This project is for learning and educational purposes.
