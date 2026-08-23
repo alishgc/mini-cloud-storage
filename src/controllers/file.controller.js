@@ -11,7 +11,7 @@ const fileUpload =  async (req, res) => {
         });
     }
 
-    const { originalname, filename, mimetype, size, path } = req.file;
+    const { originalname, filename, mimetype, size, path: filePath } = req.file;
     const userId = req.user.userId;
 
     try {
@@ -28,7 +28,7 @@ const fileUpload =  async (req, res) => {
     } catch (error) {
 
         try {
-            await fs.unlink(path);
+            await fs.unlink(filePath);
         } catch (deleteError) {
             console.error("Failed to delete orphaned file:", deleteError.message);
         }
@@ -36,7 +36,7 @@ const fileUpload =  async (req, res) => {
         console.error("Failed to save file metadata:", error.message);
 
         res.status(500).json({
-            message: "File uploaded failed"
+            message: "File upload failed"
         });
     }
 };
@@ -73,7 +73,7 @@ const getFile = async (req, res) => {
     try {
         
         const result = await pool.query(
-            `SELECT *
+            `SELECT id, original_name, stored_name, mime_type, size, created_at
             FROM files
             WHERE id = $1
             AND user_id = $2`,
@@ -114,7 +114,7 @@ const getFile = async (req, res) => {
         console.error("Failed to retrieve file:", error.message);
 
         res.status(500).json({
-            message: "Failed to retrive file"
+            message: "Failed to retrieve file"
         });
     }
 
@@ -130,8 +130,8 @@ const deleteFile = async (req, res) => {
         const result = await pool.query(`
             SELECT stored_name
             FROM files
-            WHERE id = $1
-            `, [id]
+            WHERE id = $1 AND user_id = $2
+            `, [id, req.user.userId]
         );
     
         if (result.rows.length === 0) {
