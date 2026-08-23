@@ -6,21 +6,21 @@ Built to practice file handling, authentication, authorization, PostgreSQL, and 
 
 ## Features
 
-- 📤 File upload with validation
-- 📥 File download and retrieval
-- 🔐 User authentication and authorization
-- 📊 File management (list, delete, update metadata)
-- 🗄️ PostgreSQL database integration
-- 🛡️ Secure file storage
-- ⚡ RESTful API architecture
+- File upload with validation
+- File download and retrieval
+- User authentication and authorization
+- File management (list, delete, update metadata)
+- PostgreSQL database integration
+- Secure file storage
+- RESTful API architecture
 
 ## Tech Stack
 
-- **Node.js** - JavaScript runtime
-- **Express.js** - Web framework
-- **PostgreSQL** - Database
-- **JWT** - Authentication
-- **Multer** - File upload handling
+- **Node.js** 
+- **Express.js** 
+- **PostgreSQL** 
+- **JWT** 
+- **Multer** 
 
 ## Project Structure
 
@@ -74,14 +74,13 @@ psql -U postgres -f schema.sql
 Create a `.env` file in the root directory:
 
 ```env
-PORT=5000
+PORT=3000
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=mini_cloud_storage
 DB_USER=postgres
 DB_PASSWORD=your_password
 JWT_SECRET=your_jwt_secret
-NODE_ENV=development
 ```
 
 ### 5. Start the server
@@ -90,7 +89,7 @@ NODE_ENV=development
 npm start
 ```
 
-The server will start at `http://localhost:5000`
+The server will start at `http://localhost:3000`
 
 ## API Endpoints
 
@@ -263,19 +262,3 @@ Content-Type: application/json
 | `DB_PASSWORD` | Database password |
 | `JWT_SECRET` | JWT signing secret |
 | `NODE_ENV` | Environment (development/production) |
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For support, please open an issue on the GitHub repository.
-
----
-
-**Built with ❤️ for learning REST APIs and file handling**
